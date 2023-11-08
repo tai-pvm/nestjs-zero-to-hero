@@ -1,8 +1,8 @@
 {
+  "a-file-icon-vscode.activeIconPacks": ["nest"],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true,
     "source.organizeImports": true
   },
-  "material-icon-theme.activeIconPack": "nest",
-  "workbench.iconTheme": "material-icon-theme"
+  "workbench.iconTheme": "a-file-icon-vscode"
 }

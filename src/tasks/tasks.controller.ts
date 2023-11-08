@@ -1,42 +1,73 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
-import type { CreateTaskDto } from './dto/create-task.dto';
-import { TasksFilterDto } from './dto/tasks-filter.dto';
-import type { TaskStatus } from './task.model';
+import { User } from '@/users/entities/user.entity';
+import { GetUser } from '@/users/get-user.decorator';
+
+import { CreateTaskDto, TasksFilterDto, UpdateTaskStatusDto } from './dto';
 import { TasksService } from './tasks.service';
 
 @Controller('tasks')
+@UseGuards(AuthGuard())
 export class TasksController {
+  private readonly logger = new Logger('TasksController');
+
   constructor(private readonly tasksService: TasksService) {}
 
   @Get()
-  public getTasks(@Query() filterDto: TasksFilterDto) {
-    if (Object.keys(filterDto).length > 0) {
-      return this.tasksService.getTasksWithFilter(filterDto);
-    }
-
-    return this.tasksService.getAllTasks();
+  public getTasks(@Query() filterDto: TasksFilterDto, @GetUser() user: User) {
+    this.logger.verbose(
+      `User "${user.username}" retrieving all tasks. Filters: ${JSON.stringify(
+        filterDto
+      )}`
+    );
+    return this.tasksService.getTasks(filterDto, user);
   }
 
   @Get(':id')
-  public getOneTask(@Param('id') id: string) {
-    return this.tasksService.getTaskById(id);
+  public getOneTask(@Param('id') id: string, @GetUser() user: User) {
+    return this.tasksService.getTaskById(id, user);
   }
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  public createTask(@Body() createDto: CreateTaskDto) {
-    return this.tasksService.createTask(createDto);
+  public createTask(
+    @Body() createTaskDto: CreateTaskDto,
+    @GetUser() user: User
+  ) {
+    this.logger.verbose(
+      `User "${user.username}" creating a new task. Data: ${JSON.stringify(
+        createTaskDto
+      )}`
+    );
+    return this.tasksService.createTask(createTaskDto, user);
   }
 
   @Patch(':id/status')
-  public updateTaskStatus(@Param('id') id: string, @Body('status') status: TaskStatus) {
-    return this.tasksService.updateTask(id, status);
+  public updateTaskStatus(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateTaskStatusDto,
+    @GetUser() user: User
+  ) {
+    const { status } = updateDto;
+    return this.tasksService.updateTaskStatus(id, status, user);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  public deleteTask(@Param('id') id: string) {
-    return this.tasksService.deleteTaskById(id);
+  public deleteTask(@Param('id') id: string, @GetUser() user: User) {
+    return this.tasksService.deleteTask(id, user);
   }
 }
